@@ -1,0 +1,23 @@
+.header {
+  padding: 10px 50px !important;
+  height: 90px !important;
+}
+
+.button {
+  margin-right: 10px;
+}
+
+.list {
+  overflow: auto;
+  height: 616px;
+}
+
+.buttonGroup {
+  padding-top: 8px;
+  line-height: 0;
+}
+
+.input {
+  line-height: 0;
+  display: block;
+}
