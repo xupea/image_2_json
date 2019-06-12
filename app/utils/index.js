@@ -44,13 +44,13 @@ export const getFrameData = image => {
 };
 
 export const saveFile = (jsonData, path, callback) => {
-  const content = JSON.stringify(jsonData);
-  console.log(jsonData, path);
+  callback(jsonData);
+  // const content = JSON.stringify(jsonData);
 
-  fs.writeFile(`${path}/data.json`, content, err => {
-    if (err) return;
-    callback();
-  });
+  // fs.writeFile(`${path}/data.json`, content, err => {
+  //   if (err) return;
+  //   callback(jsonData);
+  // });
 };
 
 const constuctSeries = (path, files) => {
@@ -58,7 +58,7 @@ const constuctSeries = (path, files) => {
   files.forEach(file => {
     if (file.indexOf('jpg') > -1) {
       seriesArray.push(callback => {
-        Jimp.read(`${path}/file`, function(err, image) {
+        Jimp.read(`${path}/${file}`, (err, image) => {
           callback(null, getFrameData(image));
         });
       });

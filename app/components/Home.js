@@ -2,8 +2,10 @@
 import fs from 'fs';
 import React, { Component } from 'react';
 import electron from 'electron';
-import { Button, List, Layout, Input, Spin, message } from 'antd';
+import { Button, List, Layout, Input, Spin, message, Modal } from 'antd';
+import { saveAs } from 'file-saver';
 import styles from './Home.css';
+import Preview from './Preview';
 import { getFramesData, saveFile } from '../utils';
 
 const { dialog } = electron.remote;
@@ -15,7 +17,9 @@ type AppState = {
   path: string,
   isLoading: boolean,
   listData: Array<any>,
-  canConvert: boolean
+  canConvert: boolean,
+  isPreview: boolean,
+  previewData: Array<any>
 };
 
 export default class Home extends Component<Props, AppState> {
@@ -28,20 +32,31 @@ export default class Home extends Component<Props, AppState> {
       path: '',
       listData: [],
       isLoading: false,
-      canConvert: false
+      canConvert: false,
+      isPreview: false,
+      previewData: null
     };
   }
 
-  saveFileHandler() {
+  saveFileHandler(previewData: Array<any>) {
     this.setState({
-      isLoading: false
+      isLoading: false,
+      previewData
     });
 
-    message.success('JSON file is saved successfully');
+    message.success('Images are converted successfully', 1);
   }
 
   saveData(path: string) {
     return (results: any) => saveFile(results, path, this.saveFileHandler);
+  }
+
+  saveExpressionFileAs() {
+    const { previewData } = this.state;
+    const blob = new Blob([JSON.stringify(previewData)], {
+      type: 'text/plain;charset=utf-8'
+    });
+    saveAs(blob, 'export.json');
   }
 
   converData() {
@@ -52,6 +67,12 @@ export default class Home extends Component<Props, AppState> {
     });
 
     getFramesData(path, listData, this.saveData(path));
+  }
+
+  showPreview(isPreview: boolean) {
+    this.setState({
+      isPreview
+    });
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -82,10 +103,17 @@ export default class Home extends Component<Props, AppState> {
   }
 
   render() {
-    const { path, isLoading, canConvert, listData } = this.state;
+    const {
+      path,
+      isLoading,
+      canConvert,
+      listData,
+      previewData,
+      isPreview
+    } = this.state;
     return (
       <div>
-        <Spin tip="Saving Data" spinning={isLoading}>
+        <Spin tip="Converting" spinning={isLoading}>
           <Layout>
             <Header className={styles.header}>
               <div>
@@ -103,10 +131,26 @@ export default class Home extends Component<Props, AppState> {
                   </Button>
                   <Button
                     type="primary"
+                    className={styles.button}
                     disabled={!canConvert}
                     onClick={() => this.converData()}
                   >
                     Convert
+                  </Button>
+                  <Button
+                    type="primary"
+                    disabled={!previewData}
+                    className={styles.button}
+                    onClick={() => this.showPreview(true)}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    type="primary"
+                    disabled={!previewData}
+                    onClick={() => this.saveExpressionFileAs()}
+                  >
+                    Save As
                   </Button>
                 </div>
               </div>
@@ -123,6 +167,16 @@ export default class Home extends Component<Props, AppState> {
             </Content>
           </Layout>
         </Spin>
+        <Modal
+          destroyOnClose
+          title="Preview"
+          centered
+          visible={isPreview}
+          onCancel={() => this.showPreview(false)}
+          onOk={() => this.showPreview(false)}
+        >
+          <Preview data={previewData} />
+        </Modal>
       </div>
     );
   }
