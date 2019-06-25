@@ -1,45 +1,53 @@
 import Jimp from 'jimp';
-import fs from 'fs';
 import series from 'async/series';
 
-const leftFirstCol = 206;
-const rightFirstCol = 752;
-const colGap = 40;
-const rowGap = 36;
-const firstRow = 135;
+const colGap = 41;
+const rowGap = 38;
+
+const leftLastCol = 526;
+const rightLastCol = 1078;
+const lastRow = 539;
+
 const rowCount = 12;
 const colCount = 9;
 
-const targetColor = 466616063;
-const targetColor2 = 483327743;
+const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84];
 
-export const extractData = (image, rowStart, colStart) => {
+const excludeRightIndexs = [1, 2, 11, 12, 13, 24, 36];
+
+export const isInside = rgbColor => {
+  return !(rgbColor.r < 10 && rgbColor.g < 10 && rgbColor.b < 10);
+};
+
+export const extractData = (image, rowStart, colStart, excludeIds) => {
   const data = [];
   let row = 1;
   let col = 1;
 
-  for (let m = rowStart; m < rowStart + rowGap * rowCount; m += rowGap) {
-    for (let i = colStart; i < colStart + colGap * colCount; i += colGap) {
+  for (let i = colStart; i > colStart - colGap * colCount; i -= colGap) {
+    for (let m = rowStart; m > rowStart - rowGap * rowCount; m -= rowGap) {
       const color = image.getPixelColour(i, m);
-      // const rgbColor = Jimp.intToRGBA(color);
-      if (color === targetColor || color === targetColor2) {
-        const index = (row - 1) * colCount + col;
-        data.push(index);
+      const rgbColor = Jimp.intToRGBA(color);
+      // data.push(rgbColor);
+      if (isInside(rgbColor)) {
+        const index = (col - 1) * rowCount + row;
+        if (excludeIds.indexOf(index) < 0) data.push(index);
       }
-      col += 1;
-      if (col > 9) col = 1;
+      row += 1;
+      if (row === 13) row = 1;
     }
-    row += 1;
+    col += 1;
   }
+  // console.log(data);
 
   return data;
 };
 
 export const getFrameData = image => {
   return {
-    fps: 30,
-    leftData: extractData(image, firstRow, leftFirstCol),
-    rightData: extractData(image, firstRow, rightFirstCol)
+    fps: 25,
+    leftData: extractData(image, lastRow, leftLastCol, excludeLeftIndexs),
+    rightData: extractData(image, lastRow, rightLastCol, excludeRightIndexs)
   };
 };
 

@@ -83,7 +83,6 @@ export default class Home extends Component<Props, AppState> {
         properties: ['openDirectory']
       },
       filePaths => {
-        // filePaths:用户选择的文件路径的数组
         if (!filePaths) return;
 
         const path = filePaths[0];
@@ -92,12 +91,23 @@ export default class Home extends Component<Props, AppState> {
           path
         });
 
-        fs.readdir(path, (err, files) => {
+        let isJPGExisted = false;
+
+        fs.readdirSync(path, (err, files) => {
+          const filteredFiles =
+            files &&
+            files.filter(
+              file => file.indexOf('.jpg') > 0 || file.indexOf('.JPG') > 0
+            );
           this.setState({
-            listData: files,
+            listData: filteredFiles,
             canConvert: true
           });
         });
+
+        if (!isJPGExisted) {
+          message.error('No jpg files are found!');
+        }
       }
     );
   }
