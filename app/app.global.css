@@ -46,3 +46,8 @@ a:hover {
   text-decoration: none;
   cursor: pointer;
 }
+
+
+.ant-spin-nested-loading > div > .ant-spin .ant-spin-dot {
+  left: 44%!important
+}

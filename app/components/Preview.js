@@ -1,6 +1,8 @@
+/* eslint-disable flowtype/no-weak-types */
 /* eslint-disable no-plusplus */
 // @flow
 import React, { Component } from 'react';
+import styles from './Preview.css';
 
 type Props = {
   data: Array<any>
@@ -18,10 +20,10 @@ export default class Preview extends Component<Props> {
 
     let i = 0;
     this.intervalId = setInterval(() => {
-      this.drawCircles(20 + 8 * 25, 20 + 11 * 25, ctx, data[i]);
+      this.drawCircles(33 + 8 * 20, 69 + 11 * 12, ctx, data[i]);
       i++;
       if (i > data.length - 1) i = 0;
-    }, 40);
+    }, 40); // 25 fps
   }
 
   componentWillUnmount() {
@@ -36,23 +38,30 @@ export default class Preview extends Component<Props> {
     // eslint-disable-next-line flowtype/no-weak-types
     data: any
   ) {
+    const { leftData, rightData } = data;
+    const radius = 6;
+    const row = 12;
+    const col = 9;
+    const gap = 14;
+    const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84, 73];
+    const excludeRightIndexs = [1, 2, 11, 12, 13, 24, 25, 36];
+
     let tempLX;
     let tempLY;
 
-    const { leftData, rightData } = data;
+    ctx.clearRect(0, 0, 470, 250);
 
-    ctx.clearRect(0, 0, 400, 400);
+    for (let i = 0; i < col; i++) {
+      tempLX = startX - i * gap;
 
-    for (let i = 0; i < 9; i++) {
-      tempLX = startX - i * 25;
-
-      for (let m = 0; m < 12; m++) {
-        tempLY = startY - m * 25;
+      for (let m = 0; m < row; m++) {
+        const index = i * row + m + 1;
+        if (excludeLeftIndexs.indexOf(index) > -1) continue;
+        tempLY = startY - m * gap;
         ctx.beginPath();
-        ctx.arc(tempLX, tempLY, 10, 0, Math.PI * 2);
+        ctx.arc(tempLX, tempLY, radius, 0, Math.PI * 2);
         ctx.closePath();
-        if (leftData.indexOf(i * 12 + m + 1) < 0)
-          ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        if (leftData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
         ctx.fill();
       }
@@ -61,16 +70,17 @@ export default class Preview extends Component<Props> {
     let tempRX;
     let tempRY;
 
-    for (let i = 0; i < 9; i++) {
-      tempRX = startX + 8 * 25 + 40 - i * 25;
+    for (let i = 0; i < col; i++) {
+      tempRX = startX + col * gap + 71 - i * gap;
 
-      for (let m = 0; m < 12; m++) {
-        tempRY = startY - m * 25;
+      for (let m = 0; m < row; m++) {
+        const index = i * row + m + 1;
+        if (excludeRightIndexs.indexOf(index) > -1) continue;
+        tempRY = startY - m * gap;
         ctx.beginPath();
-        ctx.arc(tempRX, tempRY, 10, 0, Math.PI * 2);
+        ctx.arc(tempRX, tempRY, radius, 0, Math.PI * 2);
         ctx.closePath();
-        if (rightData.indexOf(i * 12 + m + 1) < 0)
-          ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        if (rightData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
         ctx.fill();
       }
@@ -79,8 +89,8 @@ export default class Preview extends Component<Props> {
 
   render() {
     return (
-      <div>
-        <canvas id="canvas" height="400" width="600" />
+      <div className={styles.background}>
+        <canvas id="canvas" height="250" width="470" />
       </div>
     );
   }

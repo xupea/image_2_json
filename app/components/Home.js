@@ -2,7 +2,16 @@
 import fs from 'fs';
 import React, { Component } from 'react';
 import electron from 'electron';
-import { Button, List, Layout, Input, Spin, message, Modal } from 'antd';
+import {
+  Button,
+  List,
+  Layout,
+  Input,
+  Spin,
+  message,
+  Modal,
+  Progress
+} from 'antd';
 import { saveAs } from 'file-saver';
 import styles from './Home.css';
 import Preview from './Preview';
@@ -19,7 +28,9 @@ type AppState = {
   listData: Array<any>,
   canConvert: boolean,
   isPreview: boolean,
-  previewData: Array<any>
+  isJPGExisted: boolean,
+  previewData: Array<any>,
+  progress: Number
 };
 
 export default class Home extends Component<Props, AppState> {
@@ -27,25 +38,27 @@ export default class Home extends Component<Props, AppState> {
 
   constructor(props: Props) {
     super(props);
-    this.saveFileHandler = this.saveFileHandler.bind(this);
+    // this.saveFileHandler = this.saveFileHandler.bind(this);
     this.state = {
       path: '',
       listData: [],
       isLoading: false,
       canConvert: false,
       isPreview: false,
-      previewData: null
+      isJPGExisted: false,
+      previewData: [],
+      progress: 0
     };
   }
 
-  saveFileHandler(previewData: Array<any>) {
+  saveFileHandler = (previewData: Array<any>) => {
     this.setState({
       isLoading: false,
       previewData
     });
 
     message.success('Images are converted successfully', 1);
-  }
+  };
 
   saveData(path: string) {
     return (results: any) => saveFile(results, path, this.saveFileHandler);
@@ -59,6 +72,12 @@ export default class Home extends Component<Props, AppState> {
     saveAs(blob, 'export.json');
   }
 
+  progressCallback = percent => {
+    this.setState({
+      progress: percent
+    });
+  };
+
   converData() {
     const { path, listData } = this.state;
 
@@ -66,7 +85,7 @@ export default class Home extends Component<Props, AppState> {
       isLoading: true
     });
 
-    getFramesData(path, listData, this.saveData(path));
+    getFramesData(path, listData, this.saveData(path), this.progressCallback);
   }
 
   showPreview(isPreview: boolean) {
@@ -91,18 +110,18 @@ export default class Home extends Component<Props, AppState> {
           path
         });
 
-        let isJPGExisted = false;
+        const files = fs.readdirSync(path);
+        const filteredFiles =
+          files &&
+          files.filter(
+            file => file.indexOf('.jpg') > 0 || file.indexOf('.JPG') > 0
+          );
 
-        fs.readdirSync(path, (err, files) => {
-          const filteredFiles =
-            files &&
-            files.filter(
-              file => file.indexOf('.jpg') > 0 || file.indexOf('.JPG') > 0
-            );
-          this.setState({
-            listData: filteredFiles,
-            canConvert: true
-          });
+        const isJPGExisted = filteredFiles.length > 0;
+        this.setState({
+          listData: filteredFiles,
+          canConvert: isJPGExisted,
+          isJPGExisted
         });
 
         if (!isJPGExisted) {
@@ -119,16 +138,28 @@ export default class Home extends Component<Props, AppState> {
       canConvert,
       listData,
       previewData,
-      isPreview
+      isJPGExisted,
+      isPreview,
+      progress
     } = this.state;
     return (
       <div>
-        <Spin tip="Converting" spinning={isLoading}>
+        <Spin
+          indicator={
+            <Progress
+              type="circle"
+              percent={progress}
+              width={100}
+              delay={1000}
+            />
+          }
+          spinning={isLoading}
+        >
           <Layout>
             <Header className={styles.header}>
               <div>
                 <div className={styles.input}>
-                  <Input value={path} disabled />
+                  <Input placeholder="Folder Path" value={path} disabled />
                 </div>
 
                 <div className={styles.buttonGroup}>
@@ -149,7 +180,7 @@ export default class Home extends Component<Props, AppState> {
                   </Button>
                   <Button
                     type="primary"
-                    disabled={!previewData}
+                    disabled={previewData.length === 0 || !isJPGExisted}
                     className={styles.button}
                     onClick={() => this.showPreview(true)}
                   >
@@ -157,7 +188,7 @@ export default class Home extends Component<Props, AppState> {
                   </Button>
                   <Button
                     type="primary"
-                    disabled={!previewData}
+                    disabled={previewData.length === 0 || !isJPGExisted}
                     onClick={() => this.saveExpressionFileAs()}
                   >
                     Save As

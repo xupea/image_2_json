@@ -38,8 +38,6 @@ export const extractData = (image, rowStart, colStart, excludeIds) => {
     }
     col += 1;
   }
-  // console.log(data);
-
   return data;
 };
 
@@ -61,13 +59,17 @@ export const saveFile = (jsonData, path, callback) => {
   // });
 };
 
-const constuctSeries = (path, files) => {
+const constuctSeries = (path, files, callback2) => {
   const seriesArray = [];
   files.forEach(file => {
     if (file.indexOf('jpg') > -1) {
       seriesArray.push(callback => {
         Jimp.read(`${path}/${file}`, (err, image) => {
           callback(null, getFrameData(image));
+          const percent = parseInt(
+            (parseInt(file.slice(-7, -4)) / files.length) * 100
+          );
+          callback2(percent);
         });
       });
     }
@@ -76,8 +78,8 @@ const constuctSeries = (path, files) => {
   return seriesArray;
 };
 
-export const getFramesData = (path, files, callback) => {
-  const seriesArray = constuctSeries(path, files);
+export const getFramesData = (path, files, callback, callback2) => {
+  const seriesArray = constuctSeries(path, files, callback2);
   series(seriesArray, (err, results) => {
     // console.log(results);
     callback(results);

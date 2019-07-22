@@ -1,7 +1,7 @@
 {
-  "name": "electron-react-boilerplate",
+  "name": "expression-converter",
   "productName": "MakeBlockConverter",
-  "version": "0.17.1",
+  "version": "1.0.0",
   "description": "Electron application boilerplate based on React, React Router, Webpack, React Hot Loader for rapid application development",
   "scripts": {
     "build": "concurrently \"yarn build-main\" \"yarn build-renderer\"",
@@ -56,8 +56,8 @@
   },
   "main": "./app/main.prod.js",
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.develar.ElectronReact",
+    "productName": "MakeBlockConverter",
+    "appId": "org.develar.MakeBlockConverter",
     "files": [
       "app/dist/",
       "app/app.html",

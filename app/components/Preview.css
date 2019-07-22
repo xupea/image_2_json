@@ -1,1 +1,9 @@
 
+.background {
+  background-image: url("../img/bg2.jpeg");
+  background-color: white;
+  height: 268px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  position: relative;
+}
