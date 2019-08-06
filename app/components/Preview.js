@@ -44,7 +44,7 @@ export default class Preview extends Component<Props> {
     const col = 9;
     const gap = 14;
     const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84, 73];
-    const excludeRightIndexs = [1, 2, 11, 12, 13, 24, 25, 36];
+    const excludeRightIndexs = [108, 107, 98, 97, 96, 86, 85, 84, 73];
 
     let tempLX;
     let tempLY;
@@ -71,12 +71,12 @@ export default class Preview extends Component<Props> {
     let tempRY;
 
     for (let i = 0; i < col; i++) {
-      tempRX = startX + col * gap + 71 - i * gap;
+      tempRX = startX + 85 + i * gap;
 
       for (let m = 0; m < row; m++) {
         const index = i * row + m + 1;
         if (excludeRightIndexs.indexOf(index) > -1) continue;
-        tempRY = startY - m * gap;
+        tempRY = startY - (row - m - 1) * gap;
         ctx.beginPath();
         ctx.arc(tempRX, tempRY, radius, 0, Math.PI * 2);
         ctx.closePath();

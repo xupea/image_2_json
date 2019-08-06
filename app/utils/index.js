@@ -5,7 +5,9 @@ const colGap = 41;
 const rowGap = 38;
 
 const leftLastCol = 526;
-const rightLastCol = 1078;
+// const rightLastCol = 1078;
+const firstRow = 134;
+const rightFirstCol = 752;
 const lastRow = 539;
 
 const rowCount = 12;
@@ -13,7 +15,7 @@ const colCount = 9;
 
 const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84];
 
-const excludeRightIndexs = [1, 2, 11, 12, 13, 24, 36];
+const excludeRightIndexs = [];
 
 export const isInside = rgbColor => {
   return !(rgbColor.r < 10 && rgbColor.g < 10 && rgbColor.b < 10);
@@ -41,11 +43,40 @@ export const extractData = (image, rowStart, colStart, excludeIds) => {
   return data;
 };
 
+// left to right, top to bottom
+export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
+  const data = [];
+  let row = 1;
+  let col = 1;
+
+  for (let i = colStart; i < colStart + colGap * colCount; i += colGap) {
+    for (let m = rowStart; m < rowStart + rowGap * rowCount; m += rowGap) {
+      const color = image.getPixelColour(i, m);
+      const rgbColor = Jimp.intToRGBA(color);
+
+      if (isInside(rgbColor)) {
+        const index = (col - 1) * rowCount + row;
+        if (excludeIds.indexOf(index) < 0) data.push(index);
+      }
+      row += 1;
+      if (row === 13) row = 1;
+    }
+    col += 1;
+  }
+
+  return data;
+};
+
 export const getFrameData = image => {
   return {
     fps: 25,
-    leftData: extractData(image, lastRow, leftLastCol, excludeLeftIndexs),
-    rightData: extractData(image, lastRow, rightLastCol, excludeRightIndexs)
+    leftData: extractData(image, lastRow, leftLastCol, excludeLeftIndexs), // right
+    rightData: extractDataRight(
+      image,
+      firstRow,
+      rightFirstCol,
+      excludeRightIndexs
+    )
   };
 };
 
