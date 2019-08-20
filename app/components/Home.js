@@ -1,21 +1,21 @@
 // @flow
-import fs from 'fs';
+import fs, { Dirent } from 'fs';
 import React, { Component } from 'react';
 import electron from 'electron';
 import {
   Button,
-  List,
   Layout,
   Input,
   Spin,
   message,
   Modal,
-  Progress
+  Progress,
+  Table
 } from 'antd';
-import { saveAs } from 'file-saver';
 import styles from './Home.css';
 import Preview from './Preview';
-import { getFramesData, saveFile } from '../utils';
+
+import { getFramesData } from '../utils';
 
 const { dialog } = electron.remote;
 const { Header, Content } = Layout;
@@ -23,14 +23,12 @@ const { Header, Content } = Layout;
 type Props = {};
 
 type AppState = {
-  path: string,
+  rootPath: string,
   isLoading: boolean,
   listData: Array<any>,
-  canConvert: boolean,
   isPreview: boolean,
-  isJPGExisted: boolean,
   previewData: Array<any>,
-  progress: Number
+  progress: number
 };
 
 export default class Home extends Component<Props, AppState> {
@@ -38,54 +36,77 @@ export default class Home extends Component<Props, AppState> {
 
   constructor(props: Props) {
     super(props);
-    // this.saveFileHandler = this.saveFileHandler.bind(this);
     this.state = {
-      path: '',
+      rootPath: '',
       listData: [],
       isLoading: false,
-      canConvert: false,
       isPreview: false,
-      isJPGExisted: false,
       previewData: [],
       progress: 0
     };
+    this.columns = [
+      {
+        title: 'Folder',
+        dataIndex: 'name',
+        key: 'name'
+      },
+      {
+        title: 'Action',
+        dataIndex: 'action',
+        key: 'action',
+        width: 100,
+        render: (text, record) => (
+          <span>
+            <Button onClick={() => this.preview(record)} size="small">
+              Preview
+            </Button>
+          </span>
+        )
+      }
+    ];
   }
 
-  saveFileHandler = (previewData: Array<any>) => {
-    this.setState({
-      isLoading: false,
-      previewData
-    });
-
-    message.success('Images are converted successfully', 1);
-  };
-
-  saveData(path: string) {
-    return (results: any) => saveFile(results, path, this.saveFileHandler);
-  }
-
-  saveExpressionFileAs() {
-    const { previewData } = this.state;
-    const blob = new Blob([JSON.stringify(previewData)], {
-      type: 'text/plain;charset=utf-8'
-    });
-    saveAs(blob, 'export.json');
-  }
-
-  progressCallback = percent => {
+  progressCallback = (percent: number) => {
     this.setState({
       progress: percent
     });
   };
 
-  converData() {
-    const { path, listData } = this.state;
+  doneCallback = () => {
+    this.setState({
+      isLoading: false
+    });
+    message.success(
+      'Congratulation! Please check the json files in your folder.',
+      2
+    );
+  };
+
+  converImagesToJson = () => {
+    const { rootPath, listData } = this.state;
 
     this.setState({
       isLoading: true
     });
 
-    getFramesData(path, listData, this.saveData(path), this.progressCallback);
+    getFramesData(rootPath, listData, this.progressCallback, this.doneCallback);
+  };
+
+  preview(folder: any) {
+    const { rootPath } = this.state;
+
+    try {
+      const content = fs.readFileSync(`${rootPath}/${folder.name}.json`);
+
+      const previewData = JSON.parse(content.toString());
+
+      this.setState({
+        isPreview: true,
+        previewData
+      });
+    } catch (err) {
+      message.error('Please Click Convert First', 1);
+    }
   }
 
   showPreview(isPreview: boolean) {
@@ -94,54 +115,50 @@ export default class Home extends Component<Props, AppState> {
     });
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  showOpenDialog() {
+  showOpenDialog = () => {
     dialog.showOpenDialog(
       {
-        title: '选择文件夹',
+        title: 'Choose Directory',
         properties: ['openDirectory']
       },
       filePaths => {
         if (!filePaths) return;
 
-        const path = filePaths[0];
+        const rootPath = filePaths[0];
 
-        this.setState({
-          path
+        const contents = fs.readdirSync(rootPath, {
+          encoding: 'utf8',
+          withFileTypes: true
         });
 
-        const files = fs.readdirSync(path);
-        const filteredFiles =
-          files &&
-          files.filter(
-            file => file.indexOf('.jpg') > 0 || file.indexOf('.JPG') > 0
-          );
+        const folders =
+          contents &&
+          contents
+            .filter((dirent: Dirent) => dirent.isDirectory())
+            .map((dirent: Dirent) => dirent.name);
 
-        const isJPGExisted = filteredFiles.length > 0;
+        const listData = folders.map(folder => ({
+          name: folder
+        }));
+
         this.setState({
-          listData: filteredFiles,
-          canConvert: isJPGExisted,
-          isJPGExisted
+          rootPath,
+          listData
         });
-
-        if (!isJPGExisted) {
-          message.error('No jpg files are found!');
-        }
       }
     );
-  }
+  };
 
   render() {
     const {
-      path,
+      rootPath,
       isLoading,
-      canConvert,
       listData,
       previewData,
-      isJPGExisted,
       isPreview,
       progress
     } = this.state;
+
     return (
       <div>
         <Spin
@@ -159,7 +176,7 @@ export default class Home extends Component<Props, AppState> {
             <Header className={styles.header}>
               <div>
                 <div className={styles.input}>
-                  <Input placeholder="Folder Path" value={path} disabled />
+                  <Input placeholder="Folder Path" value={rootPath} disabled />
                 </div>
 
                 <div className={styles.buttonGroup}>
@@ -173,36 +190,22 @@ export default class Home extends Component<Props, AppState> {
                   <Button
                     type="primary"
                     className={styles.button}
-                    disabled={!canConvert}
-                    onClick={() => this.converData()}
+                    disabled={rootPath === ''}
+                    onClick={() => this.converImagesToJson()}
                   >
                     Convert
-                  </Button>
-                  <Button
-                    type="primary"
-                    disabled={previewData.length === 0 || !isJPGExisted}
-                    className={styles.button}
-                    onClick={() => this.showPreview(true)}
-                  >
-                    Preview
-                  </Button>
-                  <Button
-                    type="primary"
-                    disabled={previewData.length === 0 || !isJPGExisted}
-                    onClick={() => this.saveExpressionFileAs()}
-                  >
-                    Save As
                   </Button>
                 </div>
               </div>
             </Header>
             <Content>
               <div className={styles.list}>
-                <List
-                  size="large"
-                  bordered
+                <Table
+                  size="small"
+                  rowKey="name"
                   dataSource={listData}
-                  renderItem={item => <List.Item>{item}</List.Item>}
+                  columns={this.columns}
+                  pagination={false}
                 />
               </div>
             </Content>

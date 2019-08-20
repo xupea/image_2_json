@@ -1,8 +1,10 @@
+// @flow
+import fs, { Dirent } from 'fs';
 import Jimp from 'jimp';
 import series from 'async/series';
 
 const colGap = 41;
-const rowGap = 38;
+const rowGap = 36;
 
 const leftLastCol = 526;
 // const rightLastCol = 1078;
@@ -13,7 +15,7 @@ const lastRow = 539;
 const rowCount = 12;
 const colCount = 9;
 
-const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84];
+const excludeLeftIndexs = [];
 
 const excludeRightIndexs = [];
 
@@ -30,10 +32,9 @@ export const extractData = (image, rowStart, colStart, excludeIds) => {
     for (let m = rowStart; m > rowStart - rowGap * rowCount; m -= rowGap) {
       const color = image.getPixelColour(i, m);
       const rgbColor = Jimp.intToRGBA(color);
-      // data.push(rgbColor);
       if (isInside(rgbColor)) {
         const index = (col - 1) * rowCount + row;
-        if (excludeIds.indexOf(index) < 0) data.push(index);
+        data.push(index);
       }
       row += 1;
       if (row === 13) row = 1;
@@ -54,9 +55,13 @@ export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
       const color = image.getPixelColour(i, m);
       const rgbColor = Jimp.intToRGBA(color);
 
+      console.log(rgbColor);
+      console.log(i, m);
+      console.log((col - 1) * rowCount + row);
+
       if (isInside(rgbColor)) {
         const index = (col - 1) * rowCount + row;
-        if (excludeIds.indexOf(index) < 0) data.push(index);
+        data.push(index);
       }
       row += 1;
       if (row === 13) row = 1;
@@ -67,7 +72,7 @@ export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
   return data;
 };
 
-export const getFrameData = image => {
+export const getFrameData = (image: any) => {
   return {
     fps: 25,
     leftData: extractData(image, lastRow, leftLastCol, excludeLeftIndexs), // right
@@ -80,39 +85,52 @@ export const getFrameData = image => {
   };
 };
 
-export const saveFile = (jsonData, path, callback) => {
-  callback(jsonData);
-  // const content = JSON.stringify(jsonData);
-
-  // fs.writeFile(`${path}/data.json`, content, err => {
-  //   if (err) return;
-  //   callback(jsonData);
-  // });
+const isJpgOrPng = image => {
+  return image.indexOf('.jpg') > -1 || image.indexOf('.png') > -1;
 };
 
-const constuctSeries = (path, files, callback2) => {
-  const seriesArray = [];
-  files.forEach(file => {
-    if (file.indexOf('jpg') > -1) {
-      seriesArray.push(callback => {
-        Jimp.read(`${path}/${file}`, (err, image) => {
-          callback(null, getFrameData(image));
-          const percent = parseInt(
-            (parseInt(file.slice(-7, -4)) / files.length) * 100
-          );
-          callback2(percent);
+export const getFramesData = (
+  rootPath: string,
+  folders: Array<any>,
+  callback: (percent: number) => void,
+  done: () => void
+) => {
+  const folderSeries = [];
+
+  folders.forEach((folder, index) => {
+    const percent = index / folders.length;
+
+    folderSeries.push(folderCallback => {
+      const images = fs.readdirSync(`${rootPath}/${folder.name}`, {
+        encoding: 'utf8'
+      });
+
+      const imageSeries = [];
+
+      images.forEach((image, imageIndex) => {
+        if (!isJpgOrPng(image)) return;
+
+        imageSeries.push(imageCallback => {
+          Jimp.read(`${rootPath}/${folder.name}/${image}`, (err, imgData) => {
+            const p =
+              percent +
+              ((1 / folders.length) * (imageIndex + 1)) / images.length;
+
+            callback(Math.ceil(p * 100));
+            imageCallback(null, getFrameData(imgData));
+          });
         });
       });
-    }
+
+      series(imageSeries, (err, results) => {
+        const content = JSON.stringify(results);
+        fs.writeFileSync(`${rootPath}/${folder.name}.json`, content);
+        folderCallback(null);
+      });
+    });
   });
 
-  return seriesArray;
-};
-
-export const getFramesData = (path, files, callback, callback2) => {
-  const seriesArray = constuctSeries(path, files, callback2);
-  series(seriesArray, (err, results) => {
-    // console.log(results);
-    callback(results);
+  series(folderSeries, () => {
+    done();
   });
 };
