@@ -1,4 +1,11 @@
 
+### Process and Tools
+
+Video -> Images -> Json Data
+
+Photoshop: Extract Frames to Images
+
+
 ### Folder Rules
 
 ```
