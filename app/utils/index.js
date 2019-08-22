@@ -7,7 +7,6 @@ const colGap = 41;
 const rowGap = 36;
 
 const leftLastCol = 526;
-// const rightLastCol = 1078;
 const firstRow = 134;
 const rightFirstCol = 752;
 const lastRow = 539;
@@ -15,15 +14,20 @@ const lastRow = 539;
 const rowCount = 12;
 const colCount = 9;
 
-const excludeLeftIndexs = [];
-
-const excludeRightIndexs = [];
-
-export const isInside = rgbColor => {
+export const isInside = (rgbColor: {
+  r: number,
+  g: number,
+  b: number,
+  a: number
+}) => {
   return !(rgbColor.r < 10 && rgbColor.g < 10 && rgbColor.b < 10);
 };
 
-export const extractData = (image, rowStart, colStart, excludeIds) => {
+export const extractData = (
+  image: Jimp,
+  rowStart: number,
+  colStart: number
+) => {
   const data = [];
   let row = 1;
   let col = 1;
@@ -45,7 +49,11 @@ export const extractData = (image, rowStart, colStart, excludeIds) => {
 };
 
 // left to right, top to bottom
-export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
+export const extractDataRight = (
+  image: Jimp,
+  rowStart: number,
+  colStart: number
+) => {
   const data = [];
   let row = 1;
   let col = 1;
@@ -54,10 +62,6 @@ export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
     for (let m = rowStart; m < rowStart + rowGap * rowCount; m += rowGap) {
       const color = image.getPixelColour(i, m);
       const rgbColor = Jimp.intToRGBA(color);
-
-      console.log(rgbColor);
-      console.log(i, m);
-      console.log((col - 1) * rowCount + row);
 
       if (isInside(rgbColor)) {
         const index = (col - 1) * rowCount + row;
@@ -72,16 +76,11 @@ export const extractDataRight = (image, rowStart, colStart, excludeIds) => {
   return data;
 };
 
-export const getFrameData = (image: any) => {
+export const getFrameData = (image: Jimp) => {
   return {
     fps: 25,
-    leftData: extractData(image, lastRow, leftLastCol, excludeLeftIndexs), // right
-    rightData: extractDataRight(
-      image,
-      firstRow,
-      rightFirstCol,
-      excludeRightIndexs
-    )
+    leftData: extractData(image, lastRow, leftLastCol),
+    rightData: extractDataRight(image, firstRow, rightFirstCol)
   };
 };
 
@@ -91,7 +90,7 @@ const isJpgOrPng = image => {
 
 export const getFramesData = (
   rootPath: string,
-  folders: Array<any>,
+  folders: Array<{ name: string }>,
   callback: (percent: number) => void,
   done: () => void
 ) => {

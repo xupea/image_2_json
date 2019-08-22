@@ -15,7 +15,7 @@ export default class Preview extends Component<Props> {
 
   componentDidMount() {
     const { data } = this.props;
-    const canvas = document.getElementById('canvas');
+    const canvas: any = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
     let i = 0;
@@ -43,6 +43,7 @@ export default class Preview extends Component<Props> {
     const row = 12;
     const col = 9;
     const gap = 14;
+
     const excludeLeftIndexs = [108, 107, 98, 97, 96, 86, 85, 84, 73];
     const excludeRightIndexs = [108, 107, 98, 97, 96, 86, 85, 84, 73];
 
@@ -56,14 +57,15 @@ export default class Preview extends Component<Props> {
 
       for (let m = 0; m < row; m++) {
         const index = i * row + m + 1;
-        if (excludeLeftIndexs.indexOf(index) > -1) continue;
-        tempLY = startY - m * gap;
-        ctx.beginPath();
-        ctx.arc(tempLX, tempLY, radius, 0, Math.PI * 2);
-        ctx.closePath();
-        if (leftData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
-        ctx.fill();
+        if (excludeLeftIndexs.indexOf(index) < 0) {
+          tempLY = startY - m * gap;
+          ctx.beginPath();
+          ctx.arc(tempLX, tempLY, radius, 0, Math.PI * 2);
+          ctx.closePath();
+          if (leftData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+          else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
+          ctx.fill();
+        }
       }
     }
 
@@ -75,14 +77,15 @@ export default class Preview extends Component<Props> {
 
       for (let m = 0; m < row; m++) {
         const index = i * row + m + 1;
-        if (excludeRightIndexs.indexOf(index) > -1) continue;
-        tempRY = startY - (row - m - 1) * gap;
-        ctx.beginPath();
-        ctx.arc(tempRX, tempRY, radius, 0, Math.PI * 2);
-        ctx.closePath();
-        if (rightData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
-        ctx.fill();
+        if (excludeRightIndexs.indexOf(index) < 0) {
+          tempRY = startY - (row - m - 1) * gap;
+          ctx.beginPath();
+          ctx.arc(tempRX, tempRY, radius, 0, Math.PI * 2);
+          ctx.closePath();
+          if (rightData.indexOf(index) < 0) ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+          else ctx.fillStyle = 'rgba(28, 200, 255, 1)';
+          ctx.fill();
+        }
       }
     }
   }
